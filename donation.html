@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Data List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: transparent;
+            color: white;
+            text-align: center;
+        }
+        #dataList {
+            position: fixed;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 20px;
+            width: 500px;
+            text-align: left;
+            max-height: 400px;
+            overflow: hidden;
+        }
+        .data-entry {
+            padding: 5px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div id="dataList"></div>
+
+    <script>
+        const sheetID = "1t4AdvG7cPtMdNVli3c2aPJ1tlDF-AVe_YKgRLVQosic"; // Replace with your actual Google Sheet ID
+        const apiUrl = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json`;
+
+        let entries = [];
+        let displayedEntries = [];
+
+        async function fetchData() {
+            try {
+                const response = await fetch(apiUrl);
+                const text = await response.text();
+                const json = JSON.parse(text.substring(47, text.length - 2)); // Clean Google JSON response
+                entries = json.table.rows.map(row => row.c.map(cell => cell ? cell.v : ""));
+
+                if (entries.length > 0) {
+                    addNewEntry(); // Start adding entries
+                    setInterval(addNewEntry, 7000); // Update every 7 seconds
+                } else {
+                    document.getElementById("dataList").innerText = "No data available";
+                }
+            } catch (error) {
+                document.getElementById("dataList").innerText = "Error fetching data";
+            }
+        }
+
+        function addNewEntry() {
+            if (entries.length === 0) return;
+
+            const randomIndex = Math.floor(Math.random() * entries.length);
+            const [Name, Amount] = entries[randomIndex];
+
+            const dataList = document.getElementById("dataList");
+
+            // Create a new entry
+            const newEntry = document.createElement("div");
+            newEntry.className = "data-entry";
+            newEntry.innerHTML = `${Name} donated $${Amount}`;
+            
+            // Add it to the top
+            dataList.prepend(newEntry);
+
+            // Fade in effect
+            setTimeout(() => newEntry.style.opacity = "1", 100);
+
+            // Keep only the last 10 entries
+            if (dataList.children.length > 10) {
+                dataList.removeChild(dataList.lastChild);
+            }
+        }
+
+        fetchData();
+    </script>
+</body>
+</html>
